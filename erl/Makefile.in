@@ -1,0 +1,38 @@
+PACKAGE_NAME = @PACKAGE_NAME@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+ERLC_FLAGS := -W
+EBIN_DIR := ../ebin
+EMULATOR := beam
+ERL_SOURCES := $(wildcard *.erl)
+TEST_SOURCES := $(wildcard ../etest/test_*.erl)
+MOD := $(patsubst ../etest/test_%.erl,%,$(TEST_SOURCES))
+ERL_TEST_DIRECTIVES := $(MOD:%=-run % test)
+ERL_HEADERS := $(wildcard *.hrl) $(wildcard include/*.hrl)
+ERL_OBJECTS := $(ERL_SOURCES:$.erl=$(EBIN_DIR)/%.$(EMULATOR))
+MODULES := $(patsubst %.erl,%,$(ERL_SOURCES))
+EBIN_FILES := $(MODULES:%=$(EBIN_DIR)/%.$(EMULATOR))
+ERLDIR = @ERLDIR@
+
+$(EBIN_DIR)/%.$(EMULATOR):: %.erl ../etest/test_%.erl
+	mkdir -p $(EBIN_DIR)
+	erlc $(ERLC_FLAGS) $(TEST) -I./include -I../etest -o $(EBIN_DIR) $<
+
+$(EBIN_DIR)/%.$(EMULATOR):: %.erl
+	mkdir -p $(EBIN_DIR)
+	erlc $(ERLC_FLAGS) $(TEST) -I./include -I../etest -o $(EBIN_DIR) $<
+		
+all: $(EBIN_FILES)
+	
+debug:
+	$(MAKE) DEBUG=-DDEBUG
+
+test:
+	$(MAKE) TEST=-DTEST
+	erl -boot start_sasl +K true -smp enable -pa ../ebin -sname local_test -noshell $(ERL_TEST_DIRECTIVES) -run erlang halt
+
+clean:
+	-rm -rf $(EBIN_FILES)
+
+install:
+	install -d $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)
+	cp -r `pwd`/../ebin $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)

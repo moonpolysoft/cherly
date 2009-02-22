@@ -1,0 +1,56 @@
+SHELL = /bin/sh
+VPATH = @srcdir@
+
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = $(exec_prefix)/bin
+infodir = $(prefix)/info
+libdir = $(prefix)/lib/gnudl
+mandir = $(prefix)/man/man1
+CFLAGS = $(CPPFLAGS) @CFLAGS@ @JUDY_CFLAGS@
+
+ifeq ($(shell uname),Linux)
+	LDFLAGS = $(LDFLAGS_COMMON) -shared
+else
+	LDFLAGS = $(LDFLAGS_COMMON) -dynamic -bundle -undefined suppress -flat_namespace
+endif
+
+CC = @CC@
+CPPFLAGS = @CPPFLAGS@
+LIBS = @LIBS@
+
+PACKAGE_NAME = @PACKAGE_NAME@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+
+OUTPUTFILES := $(patsubst %_drv.c, ../priv/%_drv.so, $(wildcard *_drv.c))
+
+DEFS = -DHAVE_CONFIG_H
+
+ERLDIR = @ERLDIR@
+
+
+all: $(OUTPUTFILES)
+
+debug:
+	$(MAKE) DEBUG=-DDEBUG
+
+.SUFFIXES: .o .c .h
+
+../lib/%_drv.so: %_drv.o common.o
+	mkdir -p ../priv
+	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) $(LDFLAGS) @JUDY_LIBS@ -o $@ $^ @LIBEI@	
+
+test:
+	$(MAKE) TEST=-DTEST
+
+.c.o:
+	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) -c $<
+
+clean:
+	rm -rf *.o *.a $(OUTPUTFILES)
+
+install:
+	install -d $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/priv
+	cp -r `pwd`/../priv $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/
