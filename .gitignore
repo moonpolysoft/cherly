@@ -1,0 +1,9 @@
+autom4te.cache/*
+c/Makefile
+erl/Makefile
+ebin/*.beam
+priv/*.so
+c/*.o
+config.log
+config.status
+c/config.h

@@ -38,7 +38,7 @@ debug:
 
 .SUFFIXES: .o .c .h
 
-../lib/%_drv.so: %_drv.o common.o
+../priv/%_drv.so: %_drv.o
 	mkdir -p ../priv
 	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) $(LDFLAGS) @JUDY_LIBS@ -o $@ $^ @LIBEI@	
 

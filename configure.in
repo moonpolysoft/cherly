@@ -3,8 +3,7 @@
 
 AC_PREREQ(2.60)
 AC_INIT(cherly, 0.0.1)
-AC_CONFIG_SRCDIR([c/erlang_codes.h])
-AC_CONFIG_HEADER([c/config.h])
+# AC_CONFIG_HEADER([c/config.h])
 
 # Checks for programs.
 AC_PROG_CC
@@ -15,7 +14,6 @@ AC_ARG_WITH(judy,
     [ --with-judy=<path> prefix of Judy installation. e.g. /usr/local or /usr],
     [JUDY_PREFIX=$with_judy],
 		[JUDY_PREFIX=/usr/local])
-)
 
 AC_SUBST(JUDY_PREFIX)
 JUDY_LIBS="-L${JUDY_PREFIX}/lib -lJudy"
