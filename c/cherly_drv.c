@@ -1,20 +1,26 @@
+#include <Judy.h>
 #include <erl_driver.h>
 #include <ei.h>
 #include <stdio.h>
+#include "cherly.h"
 
-#define read_int32(s) ((((unsigned char*) (s))[0] << 24) | \
-                      (((unsigned char*) (s))[1] << 16) | \
-                      (((unsigned char*) (s))[2] << 8)  | \
-                      (((unsigned char*) (s))[3]))
+#define read_int32(s)  ((((int)(((unsigned char*) (s))[0]))  << 24) | \
+                        (((int)(((unsigned char*) (s))[1]))  << 16) | \
+                        (((int)(((unsigned char*) (s))[2]))  << 8)  | \
+                        (((int)(((unsigned char*) (s))[3]))))
 
+#define INIT 'i'
+#define GET 'g'
+#define PUT 'p'
+#define DELETE 'd'
 
-static ErlDrvData init(ErlDrvPort port, char *cmd);
+static ErlDrvData start(ErlDrvPort port, char *cmd);
 static void stop(ErlDrvData handle);
 static void outputv(ErlDrvData handle, ErlIOVec *ev);
 
 static ErlDrvEntry cherly_driver_entry = {
     NULL,                             /* init */
-    init, 
+    start, 
     stop, 
     NULL,                             /* output */
     NULL,                             /* ready_input */
@@ -44,10 +50,10 @@ DRIVER_INIT(cherly_driver) {
   return &cherly_driver_entry;
 }
 
-static ErlDrvData init(ErlDrvPort port, char *cmd) {
+static ErlDrvData start(ErlDrvPort port, char *cmd) {
   cherly_drv_t *cherly_drv = (cherly_drv_t*)driver_alloc(sizeof(cherly_drv_t));
-  cherly->port = port;
-  cherly->cherly = driver_alloc(sizeof(cherly_t));
+  cherly_drv->port = port;
+  cherly_drv->cherly = driver_alloc(sizeof(cherly_t));
   return (ErlDrvData) cherly_drv;
 }
 
@@ -57,35 +63,98 @@ static void stop(ErlDrvData handle) {
   
 }
 
+static void init(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  SysIOVec *iov;
+  int index = 0;
+  long options;
+  unsigned long max_size;
+  
+  iov = &ev->iov[2];
+  ei_decode_version(iov->iov_base, &index, NULL);
+  ei_decode_tuple_header(iov->iov_base, &index, NULL);
+  ei_decode_long(iov->iov_base, &index, &options);
+  ei_decode_ulong(iov->iov_base, &index, &max_size);
+  cherly_init(cherly_drv->cherly, options, max_size);
+}
+
+static void get(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  SysIOVec *key;
+  ErlIOVec *value;
+  
+  key = &ev->iov[2];
+  value = (ErlIOVec *) cherly_get(cherly_drv->cherly, key->iov_base, key->iov_len);
+  printf("value get %p\n", value);
+  driver_outputv(cherly_drv->port, "", 0, value, 0);
+}
+
+static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  SysIOVec *key;
+  ErlIOVec *value;
+  ErlDrvBinary *bin;
+  ErlDrvBinary **binv;
+  int i;
+  
+  key = &ev->iov[2];
+  value = driver_alloc(sizeof(ErlIOVec));
+  value->iov = driver_alloc(sizeof(SysIOVec) * (ev->vsize-3)); //will this work
+  // value->iov = NULL;
+  value->vsize = ev->vsize-3;
+  value->size = 0;
+  //we need to copy this to the new vec
+  binv = driver_alloc(sizeof(ErlDrvBinary*) * (ev->vsize-3));
+  for(i=3; i < ev->vsize; i++) {
+    bin = ev->binv[i];
+    value->size += bin->orig_size;
+    binv[i-3] = bin;
+    driver_binary_inc_refc(bin);
+    value->iov[i-3].iov_len = bin->orig_size;
+    value->iov[i-3].iov_base = bin->orig_bytes;
+  }
+  value->binv = binv;
+  printf("value put %p\n", value);
+  cherly_put(cherly_drv->cherly, key->iov_base, key->iov_len, value);
+}
+
+static void delete(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  
+}
+
 static void outputv(ErlDrvData handle, ErlIOVec *ev) {
   cherly_drv_t *cherly_drv = (cherly_drv_t *)handle;
-  int i=0;
   char command;
-  SysIOVec *iov;
   
   //command will come thru in the first binary
-  iov = ev->iov[1];
-  command = iov->iov_base[0];
+  command = ev->iov[1].iov_base[0];
   
   switch(command) {
-    case INIT:
-      cherly_init()
+  case INIT:
+    init(cherly_drv, ev);
+    break;
+  case GET:
+    get(cherly_drv, ev);
+    break;
+  case PUT:
+    put(cherly_drv, ev);
+    break;
+  case DELETE:
+    delete(cherly_drv, ev);
+    break;
   };
   
   
   
   
-  printf("ev->size %d\n", ev->size);
-  printf("ev->vsize %d\n", ev->vsize);
-  printf("ev->iov %p\n", ev->iov);
-  printf("ev->binv %p\n", ev->binv[1]);
-  for(i=0; i < ev->vsize; i++) {
-    printf("\"%d\"\n", ev->iov[i].iov_len);
-  }
-  printf("binaries\n");
-  for(i=1; i < ev->vsize; i++) {
-    printf("\"%d\"\n", ev->binv[i]->orig_size);
-  }
+  // printf("ev->size %d\n", ev->size);
+  // printf("ev->vsize %d\n", ev->vsize);
+  // printf("ev->iov %p\n", ev->iov);
+  // printf("ev->binv %p\n", ev->binv[1]);
+  // for(i=0; i < ev->vsize; i++) {
+  //   printf("\"%d\"\n", ev->iov[i].iov_len);
+  // }
+  // printf("binaries\n");
+  // for(i=1; i < ev->vsize; i++) {
+  //   printf("\"%d\"\n", ev->binv[i]->orig_size);
+  // }
   // for(i=0; i < ev->vsize; i++) {
   //   printf("\"");
   //   for(n=0; n < ev->binv[i]->orig_size; n++) {
