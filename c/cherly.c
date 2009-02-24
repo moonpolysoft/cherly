@@ -7,15 +7,21 @@ void cherly_init(cherly_t *cherly, int options, unsigned long max_size) {
   cherly->max_size = max_size;
 }
 
-void cherly_put(cherly_t *cherly, void *key, int length, void *value) {
-  JHSI(value, cherly->judy, key, length);
+void cherly_put(cherly_t *cherly, char *key, int length, void *value) {
+  PWord_t PValue;
+  JHSI(PValue, cherly->judy, key, length);
+  *PValue = value;
+  if (value == PJERR) {
+    printf("shit\n");
+  }
 }
 
-void * cherly_get(cherly_t *cherly, void *key, int length) {
-  void *value;
+void * cherly_get(cherly_t *cherly, char *key, int length) {
+  PWord_t PValue;
   
-  JHSG(value, cherly->judy, key, length);
-  return value;
+  JHSG(PValue, cherly->judy, key, length);
+  
+  return (void *)*PValue;
 }
 
 void cherly_destroy(cherly_t *cherly) {

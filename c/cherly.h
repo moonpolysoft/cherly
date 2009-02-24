@@ -10,8 +10,8 @@ typedef struct _cherly_t {
 } cherly_t;
 
 void cherly_init(cherly_t *cherly, int options, unsigned long max_size);
-void * cherly_get(cherly_t *cherly, void * key, int length);
-void cherly_put(cherly_t *cherly, void * key, int length, void * value);
+void * cherly_get(cherly_t *cherly, char * key, int length);
+void cherly_put(cherly_t *cherly, char * key, int length, void *value);
 void cherly_destroy(cherly_t *cherly);
 
 #endif
