@@ -83,7 +83,6 @@ static void get(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   
   key = &ev->iov[2];
   value = (ErlIOVec *) cherly_get(cherly_drv->cherly, key->iov_base, key->iov_len);
-  printf("value get %p\n", value);
   driver_outputv(cherly_drv->port, "", 0, value, 0);
 }
 
@@ -111,7 +110,6 @@ static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
     value->iov[i-3].iov_base = bin->orig_bytes;
   }
   value->binv = binv;
-  printf("value put %p\n", value);
   cherly_put(cherly_drv->cherly, key->iov_base, key->iov_len, value);
 }
 
