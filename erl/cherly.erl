@@ -11,11 +11,14 @@
 -module(cherly).
 -author('cliff@moonpolysoft.com').
 
--export([start/0]).
+-export([start/1]).
 
-start() ->
+start(Size) ->
   case load_driver() of
-    ok -> {ok, {cherly, open_port({spawn, 'cherly_drv'}, [binary])}};
+    ok -> 
+      P = open_port({spawn, 'cherly_drv'}, [binary]),
+      port_command(P, [$i, term_to_binary(0), term_to_binary(Size)]),
+      {ok, {cherly, P}};
     {error, Err} ->
       Msg = erl_ddll:format_error(Err),
       {error, Msg}
