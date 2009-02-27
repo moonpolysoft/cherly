@@ -1,8 +1,12 @@
 #include <Judy.h>
 #include "cherly.h"
+#include "double_link.h"
+
+
 
 void cherly_init(cherly_t *cherly, int options, unsigned long max_size) {
   cherly->judy = NULL;
+  cherly->lru  = d_list_create();
   cherly->size = 0;
   cherly->max_size = max_size;
 }
@@ -19,6 +23,7 @@ void cherly_put(cherly_t *cherly, char *key, int length, void *value) {
 void * cherly_get(cherly_t *cherly, char *key, int length) {
   PWord_t PValue;
   
+    return NULL;
   JHSG(PValue, cherly->judy, key, length);
   
   return (void *)*PValue;
