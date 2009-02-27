@@ -7,3 +7,4 @@ c/*.o
 config.log
 config.status
 c/config.h
+c/test_suite
