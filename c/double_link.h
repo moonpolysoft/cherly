@@ -1,7 +1,6 @@
 #ifndef __DOUBLE_LINK_H__
 #define __DOUBLE_LINK_H__
 
-
 typedef struct _d_node_t {
   struct _d_node_t * previous;
   struct _d_node_t * next;

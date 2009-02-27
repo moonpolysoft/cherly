@@ -2,6 +2,7 @@
 #include <erl_driver.h>
 #include <ei.h>
 #include <stdio.h>
+#include <string.h>
 #include "cherly.h"
 
 #define read_int32(s)  ((((int)(((unsigned char*) (s))[0]))  << 24) | \
@@ -17,6 +18,7 @@
 static ErlDrvData start(ErlDrvPort port, char *cmd);
 static void stop(ErlDrvData handle);
 static void outputv(ErlDrvData handle, ErlIOVec *ev);
+static void destroy(char * key, int keylen, void * value, int vallen);
 
 static ErlDrvEntry cherly_driver_entry = {
     NULL,                             /* init */
@@ -91,7 +93,9 @@ static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   ErlIOVec *value;
   ErlDrvBinary *bin;
   ErlDrvBinary **binv;
+  char* copied_key;
   int i;
+  int size;
   
   key = &ev->iov[2];
   value = driver_alloc(sizeof(ErlIOVec));
@@ -110,7 +114,11 @@ static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
     value->iov[i-3].iov_base = bin->orig_bytes;
   }
   value->binv = binv;
-  cherly_put(cherly_drv->cherly, key->iov_base, key->iov_len, value);
+  //need to copy the key here
+  copied_key = driver_alloc(sizeof(char) * key->iov_len);
+  memcpy(copied_key, key->iov_base, key->iov_len);
+  
+  cherly_put(cherly_drv->cherly, copied_key, key->iov_len, value, value->size, &destroy);
 }
 
 static void delete(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
@@ -160,4 +168,34 @@ static void outputv(ErlDrvData handle, ErlIOVec *ev) {
   //   }
   //   printf("\"\n");
   // }
+}
+
+// value = driver_alloc(sizeof(ErlIOVec));
+// value->iov = driver_alloc(sizeof(SysIOVec) * (ev->vsize-3)); //will this work
+// // value->iov = NULL;
+// value->vsize = ev->vsize-3;
+// value->size = 0;
+// //we need to copy this to the new vec
+// binv = driver_alloc(sizeof(ErlDrvBinary*) * (ev->vsize-3));
+// for(i=3; i < ev->vsize; i++) {
+//   bin = ev->binv[i];
+//   value->size += bin->orig_size;
+//   binv[i-3] = bin;
+//   driver_binary_inc_refc(bin);
+//   value->iov[i-3].iov_len = bin->orig_size;
+//   value->iov[i-3].iov_base = bin->orig_bytes;
+// }
+// value->binv = binv;
+
+static void destroy(char * key, int keylen, void * value, int vallen) {
+  ErlIOVec* ev = (ErlIOVec*)value;
+  int i;
+  
+  free(key);
+  for(i=0; i < ev->vsize; i++) {
+    driver_free_binary(ev->binv[i]);
+  }
+  driver_free(ev->iov);
+  driver_free(ev->binv);
+  
 }
