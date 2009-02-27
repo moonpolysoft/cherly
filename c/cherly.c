@@ -23,8 +23,11 @@ void cherly_put(cherly_t *cherly, char *key, int length, void *value) {
 void * cherly_get(cherly_t *cherly, char *key, int length) {
   PWord_t PValue;
   
-    return NULL;
   JHSG(PValue, cherly->judy, key, length);
+  
+  if (NULL == PValue) {
+    return NULL;
+  }
   
   return (void *)*PValue;
 }

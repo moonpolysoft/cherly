@@ -3,7 +3,8 @@
 
 void test_double_link();
 
-void main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   test_double_link();
   test_cherly();
+  return 0;
 }
