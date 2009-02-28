@@ -20,9 +20,9 @@ endif
 CC = @CC@
 CPPFLAGS = @CPPFLAGS@
 LIBS = @LIBS@
-TEST_SOURCES := $(wildcard test_*.c)
+TEST_SOURCES := $(wildcard check_*.c)
 TEST_OBJECTS := $(patsubst %.c,%.o,$(TEST_SOURCES))
-UNDER_TEST := $(patsubst test_%.c,%.o,$(TEST_SOURCES))
+UNDER_TEST := $(patsubst check_%.c,%.o,$(TEST_SOURCES))
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 
@@ -45,7 +45,7 @@ debug:
 	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) $(LDFLAGS) @JUDY_LIBS@ @CPROPS_LIBS@ -o $@ $^ @LIBEI@	
 
 test_suite: suite.o $(TEST_OBJECTS) $(UNDER_TEST)
-	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) @JUDY_LIBS@ @CPROPS_LIBS@ -o $@ $^ @LIBEI@	
+	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) @JUDY_LIBS@ @CPROPS_LIBS@ -lcheck -o $@ $^ @LIBEI@	
 
 test: test_suite
 	$(MAKE) TEST=-DTEST

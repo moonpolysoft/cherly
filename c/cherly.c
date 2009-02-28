@@ -18,6 +18,13 @@ void cherly_put(cherly_t *cherly, char *key, int length, void *value, int size, 
   lru_item_t * item;
   d_node_t *node;
   
+  JHSG(PValue, cherly->judy, key, length);
+  if (NULL != PValue) {
+    node = *PValue;
+    item = node->data;
+    cherly_remove(cherly, item->key, item->keylen);
+  }
+  
   while (cherly->size + size > cherly->max_size) {
     //eject shit from the back of the lru
     node = d_list_shift(cherly->lru);
@@ -63,6 +70,10 @@ void * cherly_get(cherly_t *cherly, char *key, int length) {
     item = (lru_item_t*)node->data;
     return item->value;
   }
+}
+
+void cherly_remove(cherly_t *cherly, char *key, int length) {
+  
 }
 
 void cherly_destroy(cherly_t *cherly) {
