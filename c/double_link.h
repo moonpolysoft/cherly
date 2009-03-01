@@ -14,6 +14,7 @@ typedef struct _d_list_t {
 } d_list_t;
 
 #define d_list_size(list) ((list)->size)
+  
 
 d_list_t * d_list_create();
 void d_list_destroy(d_list_t * list);

@@ -1,13 +1,11 @@
 #include <Judy.h>
 #include "cherly.h"
-#include "double_link.h"
-
-
 
 void cherly_init(cherly_t *cherly, int options, unsigned long max_size) {
   cherly->judy = NULL;
-  cherly->lru  = d_list_create();
+  cherly->lru  = lru_create();
   cherly->size = 0;
+  cherly->items_length = 0;
   cherly->max_size = max_size;
 }
 
@@ -16,67 +14,61 @@ void cherly_init(cherly_t *cherly, int options, unsigned long max_size) {
 void cherly_put(cherly_t *cherly, char *key, int length, void *value, int size, DestroyCallback destroy) {
   PWord_t PValue;
   lru_item_t * item;
-  d_node_t *node;
   
   JHSG(PValue, cherly->judy, key, length);
   if (NULL != PValue) {
-    node = *PValue;
-    item = node->data;
-    cherly_remove(cherly, item->key, item->keylen);
+    item = (lru_item_t*)*PValue;
+    printf("removing an existing value\n");
+    cherly_remove(cherly, lru_item_key(item), lru_item_keylen(item));
   }
   
-  while (cherly->size + size > cherly->max_size) {
-    //eject shit from the back of the lru
-    node = d_list_shift(cherly->lru);
-    if (NULL == node) { //lolwut? is the size too small?
-      break;
-    }
-    item = node->data;
-    cherly->size -= item->vallen;
-    (*destroy)(item->key, item->keylen, item->value, item->vallen);
-    free(item);
-    d_node_destroy(node);
+  if (cherly->size + size > cherly->max_size) {
+    cherly->size -= lru_eject_by_size(cherly->lru, size - (cherly->max_size - cherly->size), (EjectionCallback)cherly_remove, cherly);
   }
   
-  item = malloc(sizeof(lru_item_t));
-  node = d_node_create(item);
-  item->key = key;
-  item->keylen = length;
-  item->value = value;
-  item->vallen = size;
-  item->destroy = destroy;
-
+  item = lru_insert(cherly->lru, key, length, value, size, destroy);
   
   JHSI(PValue, cherly->judy, key, length);
-  *PValue = node;
-  cherly->size += size;
-  
-  d_list_push(cherly->lru, node);
+  *PValue = (Word_t)item;
+  cherly->size += lru_item_size(item);
+  cherly->items_length++;
 }
 
 void * cherly_get(cherly_t *cherly, char *key, int length) {
   PWord_t PValue;
   lru_item_t * item;
-  d_node_t * node;
   
   JHSG(PValue, cherly->judy, key, length);
   
   if (NULL == PValue) {
     return NULL;
   } else {
-    node = (d_node_t *)*PValue;
-    d_list_remove(cherly->lru, node);
-    d_list_push(cherly->lru, node);
-    item = (lru_item_t*)node->data;
-    return item->value;
+    item = (lru_item_t *)*PValue;
+    lru_touch(cherly->lru, item);
+    return lru_item_value(item);
   }
 }
 
 void cherly_remove(cherly_t *cherly, char *key, int length) {
+  PWord_t PValue;
+  lru_item_t *item;
   
+  JHSG(PValue, cherly->judy, key, length);
+  
+  if (NULL == PValue) {
+    return;
+  }
+  
+  item = (lru_item_t *)*PValue;
+  lru_remove_and_destroy(cherly->lru, item);
+  cherly->size -= lru_item_size(item);
 }
 
+
+
 void cherly_destroy(cherly_t *cherly) {
-  PWord_t bytes;
+  Word_t bytes;
   JHSFA(bytes, cherly->judy);
+  lru_destroy(cherly->lru);
+  free(cherly);
 }

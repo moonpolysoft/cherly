@@ -21,6 +21,7 @@ void d_list_destroy(d_list_t *list) {
 }
 
 void d_list_push(d_list_t *list, d_node_t *node) {
+  printf("list %p\n", list);
   if (NULL == list->head && NULL == list->tail) {
     list->head = node;
     list->tail = node;

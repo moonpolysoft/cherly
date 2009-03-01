@@ -3,25 +3,19 @@
 
 #include <Judy.h>
 #include <cprops/heap.h>
-#include "double_link.h"
+#include "lru.h"
 
-//the destroy callback, this is needed to free memory for shit
-typedef void (*DestroyCallback)(char*, int, void*, int);
+#define cherly_size(cherly) ((cherly)->size)
+#define cherly_items_length(cherly) ((cherly)->items_length)
+#define cherly_max_size(cherly) ((cherly)->max_size)
 
 typedef struct _cherly_t {
   Pvoid_t judy;
-  d_list_t *lru;
+  lru_t *lru;
   unsigned long size;
+  unsigned long items_length;
   unsigned long max_size;
 } cherly_t;
-
-typedef struct _lru_item_t {
-  char * key;
-  int keylen;
-  void * value;
-  int vallen;
-  DestroyCallback destroy;
-} lru_item_t;
 
 void cherly_init(cherly_t *cherly, int options, unsigned long max_size);
 void * cherly_get(cherly_t *cherly, char * key, int length);

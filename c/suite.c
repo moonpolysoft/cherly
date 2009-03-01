@@ -4,12 +4,14 @@
 
 Suite * cherly_suite();
 Suite * double_link_suite();
+Suite * lru_suite();
 
 int main (void) {
   int number_failed;
   
   SRunner *sr = srunner_create(cherly_suite());
   srunner_add_suite(sr, double_link_suite());
+  srunner_add_suite(sr, lru_suite());
   
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);
