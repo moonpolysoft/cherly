@@ -46,15 +46,16 @@ START_TEST(eject_multiple) {
   lru_t *lru;
   int ejected = 0;
   lru_item_t *three;
-  
+  mark_point();
   lru = lru_create();
+  mark_point();
   lru_insert(lru, "one", 3, "one", 3, NULL);
   lru_insert(lru, "two", 3, "two", 3, NULL);
   three = lru_insert(lru, "three", 5, "three", 5, NULL);
-  ejected = lru_eject_by_size(lru, 16, NULL, NULL);
-  printf("ejected %d\n", ejected);
+  ejected = lru_eject_by_size(lru, 12, NULL, NULL);
+  printf("test ejected %d\n", ejected);
   fail_unless((lru_item_t*)lru->list->head->data == three);
-  fail_unless(ejected > 14);
+  fail_unless(ejected == 12);
   lru_destroy(lru);
 }
 END_TEST

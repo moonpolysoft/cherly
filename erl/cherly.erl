@@ -11,17 +11,47 @@
 -module(cherly).
 -author('cliff@moonpolysoft.com').
 
--export([start/1]).
+-export([start/1, put/3, get/2, size/1]).
+
+-define(INIT, $i).
+-define(GET, $g).
+-define(PUT, $p).
+-define(REMOVE, $r).
+-define(SIZE, $s).
+-define(ITEMS, $t).
+
+-ifdef(TEST).
+-include("test_cherly.erl").
+-endif.
+
+%% api bitches
 
 start(Size) ->
   case load_driver() of
     ok -> 
       P = open_port({spawn, 'cherly_drv'}, [binary]),
-      port_command(P, [$i, term_to_binary(0), term_to_binary(Size)]),
+      port_command(P, [?INIT, term_to_binary(0), term_to_binary(Size)]),
       {ok, {cherly, P}};
     {error, Err} ->
       Msg = erl_ddll:format_error(Err),
       {error, Msg}
+  end.
+  
+put({cherly, P}, Key, Value) ->
+  Len = length(Key),
+  port_command(P, [?PUT, <<Len:32>>, Key, Value]).
+  
+get({cherly, P}, Key) ->
+  Len = length(Key),
+  port_command(P, [?GET, <<Len:32>>, Key]),
+  receive
+    {P, {data, Bin}} -> Bin
+  end.
+  
+size({cherly, P}) ->
+  port_command(P, [?SIZE]),
+  receive
+    {P, {data, Bin}} -> binary_to_term(Bin)
   end.
   
 %%====================================================================

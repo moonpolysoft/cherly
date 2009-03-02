@@ -13,12 +13,19 @@
 #define INIT 'i'
 #define GET 'g'
 #define PUT 'p'
-#define DELETE 'd'
+#define REMOVE 'r'
+#define SIZE 's'
+#define ITEMS 't'
 
 static ErlDrvData start(ErlDrvPort port, char *cmd);
 static void stop(ErlDrvData handle);
 static void outputv(ErlDrvData handle, ErlIOVec *ev);
 static void destroy(char * key, int keylen, void * value, int vallen);
+static void send_long(ErlDrvPort port, long num);
+static void print_ev(ErlIOVec *vec);
+
+ErlIOVec* copy_io_vec(ErlIOVec *src);
+char* io_vec2str(ErlIOVec *src, int skip, int length);
 
 static ErlDrvEntry cherly_driver_entry = {
     NULL,                             /* init */
@@ -62,7 +69,7 @@ static ErlDrvData start(ErlDrvPort port, char *cmd) {
 static void stop(ErlDrvData handle) {
   cherly_drv_t *cherly_drv = (cherly_drv_t *)handle;
   cherly_destroy(cherly_drv->cherly);
-  
+  driver_free(cherly_drv->cherly);
 }
 
 static void init(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
@@ -80,49 +87,70 @@ static void init(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
 }
 
 static void get(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
-  SysIOVec *key;
+  char *key;
   ErlIOVec *value;
+  int length = 0;
   
-  key = &ev->iov[2];
-  value = (ErlIOVec *) cherly_get(cherly_drv->cherly, key->iov_base, key->iov_len);
-  driver_outputv(cherly_drv->port, "", 0, value, 0);
+  print_ev(ev);
+  
+  length = read_int32(&(ev->binv[1]->orig_bytes[1]));
+  key = io_vec2str(ev, 5, length);
+  printf("key = %c%c%c\n", key[0], key[1], key[2]);
+  
+  value = (ErlIOVec *) cherly_get(cherly_drv->cherly, key, length);
+  printf("get value %p\n", value);
+  printf("ev %p\n", ev);
+  driver_free(key);
+  printf("freed\n");
+  print_ev(value);
+  driver_outputv(cherly_drv->port, "", 0, value, length+5);
 }
 
 static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
-  SysIOVec *key;
-  ErlIOVec *value;
-  ErlDrvBinary *bin;
-  ErlDrvBinary **binv;
+  ErlDrvBinary *bin = NULL;
   char* copied_key;
-  int i;
-  int size;
+  ErlIOVec *copied_vec;
+  int length = 0;
+  int v=0;
   
-  key = &ev->iov[2];
-  value = driver_alloc(sizeof(ErlIOVec));
-  value->iov = driver_alloc(sizeof(SysIOVec) * (ev->vsize-3)); //will this work
-  // value->iov = NULL;
-  value->vsize = ev->vsize-3;
-  value->size = 0;
-  //we need to copy this to the new vec
-  binv = driver_alloc(sizeof(ErlDrvBinary*) * (ev->vsize-3));
-  for(i=3; i < ev->vsize; i++) {
-    bin = ev->binv[i];
-    value->size += bin->orig_size;
-    binv[i-3] = bin;
-    driver_binary_inc_refc(bin);
-    value->iov[i-3].iov_len = bin->orig_size;
-    value->iov[i-3].iov_base = bin->orig_bytes;
-  }
-  value->binv = binv;
+  print_ev(ev);
+  printf("ev size %d\n", ev->size);
+  printf("iovec %p\n", ev);
   //need to copy the key here
-  copied_key = driver_alloc(sizeof(char) * key->iov_len);
-  memcpy(copied_key, key->iov_base, key->iov_len);
+  while (NULL == bin && v < ev->vsize) {
+    printf("v %d\n", v);
+    bin = ev->binv[v++];
+  }
   
-  cherly_put(cherly_drv->cherly, copied_key, key->iov_len, value, value->size, &destroy);
+  printf("v is %d\n", v);
+  for(v = 0; v < ev->vsize; v++) {
+    if (NULL != ev->binv[v]) {
+      driver_binary_inc_refc(ev->binv[v]);
+    }
+  }
+  length = read_int32(&bin->orig_bytes[1]);
+  printf("length is %d\n", length);
+  copied_key = io_vec2str(ev, 5, length);
+  printf("here\n");
+  copied_vec = copy_io_vec(ev);
+  cherly_put(cherly_drv->cherly, copied_key, length, copied_vec, copied_vec->size, &destroy);
 }
 
-static void delete(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+static void chd_remove(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  SysIOVec *key;
   
+  key = &ev->iov[2];
+  cherly_remove(cherly_drv->cherly, key->iov_base, key->iov_len);
+}
+
+static void size(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  int size = cherly_size(cherly_drv->cherly);
+  send_long(cherly_drv->port, size);
+}
+
+static void items(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
+  int length = cherly_items_length(cherly_drv->cherly);
+  send_long(cherly_drv->port, length);
 }
 
 static void outputv(ErlDrvData handle, ErlIOVec *ev) {
@@ -142,50 +170,54 @@ static void outputv(ErlDrvData handle, ErlIOVec *ev) {
   case PUT:
     put(cherly_drv, ev);
     break;
-  case DELETE:
-    delete(cherly_drv, ev);
+  case REMOVE:
+    chd_remove(cherly_drv, ev);
     break;
-  };
-  
-  
-  
-  
-  // printf("ev->size %d\n", ev->size);
-  // printf("ev->vsize %d\n", ev->vsize);
-  // printf("ev->iov %p\n", ev->iov);
-  // printf("ev->binv %p\n", ev->binv[1]);
-  // for(i=0; i < ev->vsize; i++) {
-  //   printf("\"%d\"\n", ev->iov[i].iov_len);
-  // }
-  // printf("binaries\n");
-  // for(i=1; i < ev->vsize; i++) {
-  //   printf("\"%d\"\n", ev->binv[i]->orig_size);
-  // }
-  // for(i=0; i < ev->vsize; i++) {
-  //   printf("\"");
-  //   for(n=0; n < ev->binv[i]->orig_size; n++) {
-  //     printf("%c", ev->binv[i]->orig_bytes[n]);
-  //   }
-  //   printf("\"\n");
-  // }
+  case SIZE:
+    size(cherly_drv, ev);
+    break;
+  case ITEMS:
+    items(cherly_drv, ev);
+    break;
+  }
 }
 
-// value = driver_alloc(sizeof(ErlIOVec));
-// value->iov = driver_alloc(sizeof(SysIOVec) * (ev->vsize-3)); //will this work
-// // value->iov = NULL;
-// value->vsize = ev->vsize-3;
-// value->size = 0;
-// //we need to copy this to the new vec
-// binv = driver_alloc(sizeof(ErlDrvBinary*) * (ev->vsize-3));
-// for(i=3; i < ev->vsize; i++) {
-//   bin = ev->binv[i];
-//   value->size += bin->orig_size;
-//   binv[i-3] = bin;
-//   driver_binary_inc_refc(bin);
-//   value->iov[i-3].iov_len = bin->orig_size;
-//   value->iov[i-3].iov_base = bin->orig_bytes;
-// }
-// value->binv = binv;
+static void print_ev(ErlIOVec *ev) {
+  int i=0;
+  char *tmp;
+  ErlDrvBinary *bin;
+  if (NULL == ev) {
+    printf("NULL");
+    return;
+  }
+  printf("[");
+  for(i=0; i<ev->vsize; i++) {
+    printf("binv %p", ev->binv);
+    bin = ev->binv[i];
+    if (NULL == bin) {
+      printf("NULL ");
+      continue;
+    }
+    if (bin->orig_size == 0) {
+      printf("\"\" ");
+    } else {
+      tmp = malloc(sizeof(char) * (bin->orig_size+1));
+      strncpy(tmp, bin->orig_bytes, bin->orig_size);
+      printf("\"%s\" ", tmp);
+      free(tmp);
+    }
+  }
+  printf("]\n");
+}
+
+static void send_long(ErlDrvPort port, long num) {
+  ei_x_buff x;
+  
+  ei_x_new_with_version(&x);
+  ei_x_encode_long(&x, num);
+  driver_output(port, x.buff, x.index);
+  ei_x_free(&x);
+}
 
 static void destroy(char * key, int keylen, void * value, int vallen) {
   ErlIOVec* ev = (ErlIOVec*)value;
@@ -197,5 +229,99 @@ static void destroy(char * key, int keylen, void * value, int vallen) {
   }
   driver_free(ev->iov);
   driver_free(ev->binv);
+  driver_free(ev);
+}
+
+ErlIOVec* copy_io_vec(ErlIOVec *ev) {
+  ErlIOVec *to = driver_alloc(sizeof(ErlIOVec));
+  ErlDrvBinary *bin;
+  int i;
   
+  printf("to %p\n", to);
+  printf("ev %p\n", ev);
+  
+  to->iov = driver_alloc(sizeof(SysIOVec) * ev->vsize);
+  to->vsize = ev->vsize;
+  to->size = ev->size;
+  to->binv = driver_alloc(sizeof(ErlDrvBinary*) * ev->vsize);
+  for(i=0; i < ev->vsize; i++) {
+    bin = ev->binv[i];
+    if (NULL == bin) {
+      to->binv[0] = NULL;
+      to->iov[i].iov_len = 0;
+      to->iov[i].iov_base = NULL;
+    } else {
+      to->binv[i] = bin;
+      driver_binary_inc_refc(bin);
+      to->iov[i].iov_len = bin->orig_size;
+      to->iov[i].iov_base = bin->orig_bytes;
+    }
+  }
+  return to;
+  // ErlIOVec *value = driver_alloc(sizeof(ErlIOVec));
+  // value->iov = driver_alloc(sizeof(SysIOVec) * (ev->vsize-3)); //will this work
+  // // value->iov = NULL;
+  // value->vsize = ev->vsize-3;
+  // value->size = 0;
+  // //we need to copy this to the new vec
+  // binv = driver_alloc(sizeof(ErlDrvBinary*) * (ev->vsize-3));
+  // printf("ev->vsize %d\n", ev->vsize);
+  // for(i=3; i < ev->vsize; i++) {
+  //   bin = ev->binv[i];
+  //   value->size += bin->orig_size;
+  //   binv[i-3] = bin;
+  //   driver_binary_inc_refc(bin);
+  //   value->iov[i-3].iov_len = bin->orig_size;
+  //   value->iov[i-3].iov_base = bin->orig_bytes;
+  // }
+  // value->binv = binv;
+}
+
+char* io_vec2str(ErlIOVec *src, int skip, int length) {
+  char *target;
+  int v = 0;
+  int i = 0;
+  int pos = 0;
+  ErlDrvBinary * bin;
+  
+  if (skip > src->size) {
+    printf("returning null\n");
+    return NULL;
+  }
+  target = driver_alloc(sizeof(char) * length);
+  //skip whole binaries
+  while(v < src->vsize) {
+    bin = src->binv[v];
+    if (NULL == bin) {
+      v++;
+      continue;
+    }
+    if (bin->orig_size >= skip) {
+      printf("skip size is smaller than the bin\n");
+      break;
+    } else {
+      v++;
+      skip -= bin->orig_size;
+    }
+  }
+  i = skip;
+  
+  while(v < src->vsize && length > 0) {
+    bin = src->binv[v];
+    printf("v is %d\n", v);
+    if (length > (bin->orig_size - skip)) {
+      printf("copying %d bytes.  length is %d\n", bin->orig_size - skip, length);
+      memcpy(&target[pos], &bin->orig_bytes[skip], bin->orig_size - skip);
+      length -= bin->orig_size - skip;
+      pos += bin->orig_size - skip;
+    } else {
+      printf("copying %d bytes from %d.  length is %d. pos is %d\n", length, skip, length, pos);
+      memcpy(&target[pos], &bin->orig_bytes[skip], length);
+      printf("target = %c%c%c\n", target[0], target[1], target[2]);
+      pos += length;
+      break;
+    }
+    skip = 0;
+  }
+  return target;
 }

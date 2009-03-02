@@ -28,7 +28,7 @@ typedef struct _lru_item_t {
 #define lru_item_keylen(item) ((item)->keylen)
 #define lru_item_value(item) ((item)->value)
 #define lru_item_vallen(item) ((item)->vallen)
-#define lru_item_size(item) (lru_item_keylen(item) + lru_item_vallen(item) + sizeof(item) + sizeof((item)->node))
+#define lru_item_size(item) (lru_item_keylen(item) + lru_item_vallen(item))
 
 lru_t * lru_create();
 void lru_destroy(lru_t *lru);

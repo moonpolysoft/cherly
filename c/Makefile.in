@@ -40,7 +40,7 @@ debug:
 
 .SUFFIXES: .o .c .h
 
-../priv/%_drv.so: %_drv.o cherly.o double_link.o
+../priv/%_drv.so: %_drv.o cherly.o double_link.o lru.o
 	mkdir -p ../priv
 	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) $(LDFLAGS) @JUDY_LIBS@ @CPROPS_LIBS@ -o $@ $^ @LIBEI@	
 
@@ -50,6 +50,10 @@ test_suite: suite.o $(TEST_OBJECTS) $(UNDER_TEST)
 test: test_suite
 	$(MAKE) TEST=-DTEST
 	./test_suite
+	
+test-dbg: test_suite
+	$(MAKE) TEST=-DTEST
+	gdb test_suite
 
 test_%.o: test_%.c %.o
 	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) -c $<

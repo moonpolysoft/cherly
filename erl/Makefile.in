@@ -26,6 +26,19 @@ all: $(EBIN_FILES)
 debug:
 	$(MAKE) DEBUG=-DDEBUG
 
+ROOTDIR := /p/lib/erlang/
+BINDIR := $(ROOTDIR)/erts-5.6.3/bin
+EMU := beam
+PROGNAME := erl
+ARGS := "-boot start_sasl +K true -smp enable -pa ../ebin -sname local_test -noshell $(ERL_TEST_DIRECTIVES) -run erlang halt"
+
+test-dbg:
+	export ROOTDIR
+	export BINDIR
+	export EMU
+	export PROGNAME
+	gdb $(BINDIR)/erlexec
+
 test:
 	$(MAKE) TEST=-DTEST
 	erl -boot start_sasl +K true -smp enable -pa ../ebin -sname local_test -noshell $(ERL_TEST_DIRECTIVES) -run erlang halt

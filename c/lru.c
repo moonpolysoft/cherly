@@ -32,6 +32,8 @@ int lru_eject_by_size(lru_t *lru, int size, EjectionCallback eject, void * conta
   d_node_t *node;
   d_node_t *next;
   
+  printf("ejecting %d bytes\n", size);
+  
   while(ejected < size) {
     node = d_list_shift(lru->list);
     if (NULL == node) {
@@ -60,9 +62,7 @@ lru_item_t * lru_insert(lru_t *lru, char* key, int keylen, void * value, int siz
   item->vallen = size;
   item->destroy = destroy;
   item->node = d_node_create(item);
-  printf("pushing\n");
   d_list_push(lru->list, item->node);
-  printf("pushed\n");
   return item;
 }
 
