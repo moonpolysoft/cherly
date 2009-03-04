@@ -246,10 +246,11 @@ static void send_atom(ErlDrvPort port, char *atom) {
 static void destroy(char * key, int keylen, void * value, int vallen) {
   ErlIOVec* ev = (ErlIOVec*)value;
   int i;
-  
-  free(key);
+  driver_free(key);
   for(i=0; i < ev->vsize; i++) {
-    driver_free_binary(ev->binv[i]);
+    if (NULL != ev->binv[i]) {
+      driver_free_binary(ev->binv[i]);
+    }
   }
   driver_free(ev->iov);
   driver_free(ev->binv);
