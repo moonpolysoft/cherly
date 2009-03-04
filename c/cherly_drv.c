@@ -22,6 +22,7 @@ static void stop(ErlDrvData handle);
 static void outputv(ErlDrvData handle, ErlIOVec *ev);
 static void destroy(char * key, int keylen, void * value, int vallen);
 static void send_long(ErlDrvPort port, long num);
+static void send_atom(ErlDrvPort port, char* atom);
 static void print_ev(ErlIOVec *vec);
 
 ErlIOVec* copy_io_vec(ErlIOVec *src);
@@ -106,8 +107,13 @@ static void get(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   printf("ev %p\n", ev);
   driver_free(key);
   printf("freed\n");
-  print_ev(value);
-  driver_outputv(cherly_drv->port, "", 0, value, length+5);
+  if (NULL != value) {
+    print_ev(value);
+    driver_outputv(cherly_drv->port, "", 0, value, length+5);
+  } else {
+    printf("value was NULL\n");
+    send_atom(cherly_drv->port, "not_found");
+  }
 }
 
 static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
@@ -221,6 +227,11 @@ static void send_long(ErlDrvPort port, long num) {
   ei_x_encode_long(&x, num);
   driver_output(port, x.buff, x.index);
   ei_x_free(&x);
+}
+
+static void send_atom(ErlDrvPort port, char *atom) {
+  ErlDrvTermData spec[] = {ERL_DRV_ATOM, driver_mk_atom(atom)};
+  driver_output_term(port, spec, 2);
 }
 
 static void destroy(char * key, int keylen, void * value, int vallen) {
