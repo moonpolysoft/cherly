@@ -63,13 +63,17 @@ static ErlDrvData start(ErlDrvPort port, char *cmd) {
   cherly_drv_t *cherly_drv = (cherly_drv_t*)driver_alloc(sizeof(cherly_drv_t));
   cherly_drv->port = port;
   cherly_drv->cherly = driver_alloc(sizeof(cherly_t));
+  printf("starting a new cherly\n");
   return (ErlDrvData) cherly_drv;
 }
 
 static void stop(ErlDrvData handle) {
-  cherly_drv_t *cherly_drv = (cherly_drv_t *)handle;
+  cherly_drv_t *cherly_drv;
+  printf("handle %p\n", handle);
+  cherly_drv = (cherly_drv_t *)handle;
   cherly_destroy(cherly_drv->cherly);
   driver_free(cherly_drv->cherly);
+  driver_free(cherly_drv);
 }
 
 static void init(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
