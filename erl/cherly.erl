@@ -11,7 +11,7 @@
 -module(cherly).
 -author('cliff@moonpolysoft.com').
 
--export([start/1, put/3, get/2, size/1]).
+-export([start/1, put/3, get/2, remove/2, size/1, stop/1]).
 
 -define(INIT, $i).
 -define(GET, $g).
@@ -30,7 +30,7 @@ start(Size) ->
   case load_driver() of
     ok -> 
       P = open_port({spawn, 'cherly_drv'}, [binary]),
-      port_command(P, [?INIT, term_to_binary(0), term_to_binary(Size)]),
+      port_command(P, [?INIT, term_to_binary({0, Size})]),
       {ok, {cherly, P}};
     {error, Err} ->
       Msg = erl_ddll:format_error(Err),
@@ -45,8 +45,13 @@ get({cherly, P}, Key) ->
   Len = length(Key),
   port_command(P, [?GET, <<Len:32>>, Key]),
   receive
-    {P, {data, Bin}} -> Bin
+    {P, {data, Bin}} -> Bin;
+    So -> So
   end.
+  
+remove({cherly, P}, Key) ->
+  Len = length(Key),
+  port_command(P, [?REMOVE, <<Len:32>>, Key]).
   
 size({cherly, P}) ->
   port_command(P, [?SIZE]),
@@ -54,6 +59,9 @@ size({cherly, P}) ->
     {P, {data, Bin}} -> binary_to_term(Bin)
   end.
   
+stop({cherly, P}) ->
+  unlink(P),
+  port_close(P).
 %%====================================================================
 %% Internal functions
 %%====================================================================
