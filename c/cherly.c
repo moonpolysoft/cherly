@@ -94,6 +94,9 @@ void cherly_remove(cherly_t *cherly, char *key, int length) {
 
 void cherly_destroy(cherly_t *cherly) {
   Word_t bytes;
+  printf("judy %p\n", cherly->judy);
   JHSFA(bytes, cherly->judy);
+  printf("called JHSFA\n");
   lru_destroy(cherly->lru);
+  printf("lru destroy\n");
 }
