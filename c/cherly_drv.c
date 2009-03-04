@@ -83,11 +83,15 @@ static void init(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   long options;
   unsigned long max_size;
   
-  iov = &ev->iov[2];
-  ei_decode_version(iov->iov_base, &index, NULL);
-  ei_decode_tuple_header(iov->iov_base, &index, NULL);
-  ei_decode_long(iov->iov_base, &index, &options);
-  ei_decode_ulong(iov->iov_base, &index, &max_size);
+  iov = &ev->iov[1];
+  printf("ev->vsize %d\n", ev->vsize);
+  printf("iov %p\n", iov);
+  printf("iov base %p\n", iov->iov_base);
+  ei_decode_version(&iov->iov_base[1], &index, NULL);
+  ei_decode_tuple_header(&iov->iov_base[1], &index, NULL);
+  ei_decode_long(&iov->iov_base[1], &index, &options);
+  ei_decode_ulong(&iov->iov_base[1], &index, &max_size);
+  printf("cherly init %d\n", max_size);
   cherly_init(cherly_drv->cherly, options, max_size);
 }
 
