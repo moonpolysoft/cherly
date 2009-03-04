@@ -313,7 +313,10 @@ char* io_vec2str(ErlIOVec *src, int skip, int length) {
     printf("returning null\n");
     return NULL;
   }
+  // target = driver_alloc(sizeof(char) * length);
+  // driver_free(target);
   target = driver_alloc(sizeof(char) * length);
+  printf("target %p\n", target);
   //skip whole binaries
   while(v < src->vsize) {
     bin = src->binv[v];
