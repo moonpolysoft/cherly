@@ -147,14 +147,19 @@ static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   copied_key = io_vec2str(ev, 5, length);
   printf("here\n");
   copied_vec = copy_io_vec(ev);
+  printf("copied_key %p\n", copied_key);
   cherly_put(cherly_drv->cherly, copied_key, length, copied_vec, copied_vec->size, &destroy);
 }
 
 static void chd_remove(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
-  SysIOVec *key;
+  char * key;
+  int length;
   
-  key = &ev->iov[2];
-  cherly_remove(cherly_drv->cherly, key->iov_base, key->iov_len);
+  length = read_int32(&(ev->binv[1]->orig_bytes[1]));
+  key = io_vec2str(ev, 5, length);
+  
+  cherly_remove(cherly_drv->cherly, key, length);
+  driver_free(key);
 }
 
 static void size(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
