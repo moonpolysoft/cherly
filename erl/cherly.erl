@@ -11,7 +11,7 @@
 -module(cherly).
 -author('cliff@moonpolysoft.com').
 
--export([start/1, put/3, get/2, remove/2, size/1, stop/1]).
+-export([start/1, put/3, get/2, remove/2, size/1, items/1, stop/1]).
 
 -define(INIT, $i).
 -define(GET, $g).
@@ -55,6 +55,12 @@ remove({cherly, P}, Key) ->
   
 size({cherly, P}) ->
   port_command(P, [?SIZE]),
+  receive
+    {P, {data, Bin}} -> binary_to_term(Bin)
+  end.
+  
+items({cherly, P}) ->
+  port_command(P, [?ITEMS]),
   receive
     {P, {data, Bin}} -> binary_to_term(Bin)
   end.
