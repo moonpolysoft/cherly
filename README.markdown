@@ -8,6 +8,9 @@ Surely you can't be serious?
 Dependencies
 =======
 
-Judy 1.0.4: http://judy.sourceforge.net/
-cprops 0.1.8: http://sourceforge.net/projects/cprops
+* Runtime
+** Judy >= 1.0.4: http://judy.sourceforge.net/
+** Erlang >= R12B-3
+* Build (test)
+** Check >= 0.9.5 http://check.sourceforge.net/
 
