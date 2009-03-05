@@ -1,5 +1,6 @@
 #include "cherly.h"
 #include <check.h>
+#include "common.h"
 
 START_TEST(basic_get_and_put)
 {  cherly_t cherly;

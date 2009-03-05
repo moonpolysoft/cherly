@@ -1,5 +1,6 @@
 #include "double_link.h"
 #include <stdlib.h>
+#include "common.h"
 
 d_list_t * d_list_create() {
   d_list_t * list = malloc(sizeof(d_list_t));

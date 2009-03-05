@@ -1,6 +1,7 @@
 #include "double_link.h"
 #include "stdlib.h"
 #include <check.h>
+#include "common.h"
 
 START_TEST(create_and_remove)
 {

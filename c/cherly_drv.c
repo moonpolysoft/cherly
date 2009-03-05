@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "cherly.h"
+#include "common.h"
 
 #define read_int32(s)  ((((int)(((unsigned char*) (s))[0]))  << 24) | \
                         (((int)(((unsigned char*) (s))[1]))  << 16) | \
@@ -64,13 +65,13 @@ static ErlDrvData start(ErlDrvPort port, char *cmd) {
   cherly_drv_t *cherly_drv = (cherly_drv_t*)driver_alloc(sizeof(cherly_drv_t));
   cherly_drv->port = port;
   cherly_drv->cherly = driver_alloc(sizeof(cherly_t));
-  printf("starting a new cherly\n");
+  dprintf("starting a new cherly\n");
   return (ErlDrvData) cherly_drv;
 }
 
 static void stop(ErlDrvData handle) {
   cherly_drv_t *cherly_drv;
-  printf("handle %p\n", handle);
+  dprintf("handle %p\n", handle);
   cherly_drv = (cherly_drv_t *)handle;
   cherly_destroy(cherly_drv->cherly);
   driver_free(cherly_drv->cherly);
@@ -84,14 +85,14 @@ static void init(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   unsigned long max_size;
   
   iov = &ev->iov[1];
-  printf("ev->vsize %d\n", ev->vsize);
-  printf("iov %p\n", iov);
-  printf("iov base %p\n", iov->iov_base);
+  dprintf("ev->vsize %d\n", ev->vsize);
+  dprintf("iov %p\n", iov);
+  dprintf("iov base %p\n", iov->iov_base);
   ei_decode_version(&iov->iov_base[1], &index, NULL);
   ei_decode_tuple_header(&iov->iov_base[1], &index, NULL);
   ei_decode_long(&iov->iov_base[1], &index, &options);
   ei_decode_ulong(&iov->iov_base[1], &index, &max_size);
-  printf("cherly init %d\n", max_size);
+  dprintf("cherly init %d\n", max_size);
   cherly_init(cherly_drv->cherly, options, max_size);
 }
 
@@ -104,18 +105,18 @@ static void get(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   
   length = read_int32(&(ev->binv[1]->orig_bytes[1]));
   key = io_vec2str(ev, 5, length);
-  printf("key = %c%c%c\n", key[0], key[1], key[2]);
+  dprintf("key = %c%c%c\n", key[0], key[1], key[2]);
   
   value = (ErlIOVec *) cherly_get(cherly_drv->cherly, key, length);
-  printf("get value %p\n", value);
-  printf("ev %p\n", ev);
+  dprintf("get value %p\n", value);
+  dprintf("ev %p\n", ev);
   driver_free(key);
-  printf("freed\n");
+  dprintf("freed\n");
   if (NULL != value) {
     print_ev(value);
     driver_outputv(cherly_drv->port, "", 0, value, length+5);
   } else {
-    printf("value was NULL\n");
+    dprintf("value was NULL\n");
     send_atom(cherly_drv->port, "not_found");
   }
 }
@@ -128,26 +129,26 @@ static void put(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   int v=0;
   
   print_ev(ev);
-  printf("ev size %d\n", ev->size);
-  printf("iovec %p\n", ev);
+  dprintf("ev size %d\n", ev->size);
+  dprintf("iovec %p\n", ev);
   //need to copy the key here
   while (NULL == bin && v < ev->vsize) {
-    printf("v %d\n", v);
+    dprintf("v %d\n", v);
     bin = ev->binv[v++];
   }
   
-  printf("v is %d\n", v);
+  dprintf("v is %d\n", v);
   for(v = 0; v < ev->vsize; v++) {
     if (NULL != ev->binv[v]) {
       driver_binary_inc_refc(ev->binv[v]);
     }
   }
   length = read_int32(&bin->orig_bytes[1]);
-  printf("length is %d\n", length);
+  dprintf("length is %d\n", length);
   copied_key = io_vec2str(ev, 5, length);
-  printf("here\n");
+  dprintf("here\n");
   copied_vec = copy_io_vec(ev);
-  printf("copied_key %p\n", copied_key);
+  dprintf("copied_key %p\n", copied_key);
   cherly_put(cherly_drv->cherly, copied_key, length, copied_vec, copied_vec->size, &destroy);
 }
 
@@ -206,27 +207,27 @@ static void print_ev(ErlIOVec *ev) {
   char *tmp;
   ErlDrvBinary *bin;
   if (NULL == ev) {
-    printf("NULL");
+    dprintf("NULL");
     return;
   }
-  printf("[");
+  dprintf("[");
   for(i=0; i<ev->vsize; i++) {
-    printf("binv %p", ev->binv);
+    dprintf("binv %p", ev->binv);
     bin = ev->binv[i];
     if (NULL == bin) {
-      printf("NULL ");
+      dprintf("NULL ");
       continue;
     }
     if (bin->orig_size == 0) {
-      printf("\"\" ");
+      dprintf("\"\" ");
     } else {
       tmp = malloc(sizeof(char) * (bin->orig_size+1));
       strncpy(tmp, bin->orig_bytes, bin->orig_size);
-      printf("\"%s\" ", tmp);
+      dprintf("\"%s\" ", tmp);
       free(tmp);
     }
   }
-  printf("]\n");
+  dprintf("]\n");
 }
 
 static void send_long(ErlDrvPort port, long num) {
@@ -262,8 +263,8 @@ ErlIOVec* copy_io_vec(ErlIOVec *ev) {
   ErlDrvBinary *bin;
   int i;
   
-  printf("to %p\n", to);
-  printf("ev %p\n", ev);
+  dprintf("to %p\n", to);
+  dprintf("ev %p\n", ev);
   
   to->iov = driver_alloc(sizeof(SysIOVec) * ev->vsize);
   to->vsize = ev->vsize;
@@ -290,7 +291,7 @@ ErlIOVec* copy_io_vec(ErlIOVec *ev) {
   // value->size = 0;
   // //we need to copy this to the new vec
   // binv = driver_alloc(sizeof(ErlDrvBinary*) * (ev->vsize-3));
-  // printf("ev->vsize %d\n", ev->vsize);
+  // dprintf("ev->vsize %d\n", ev->vsize);
   // for(i=3; i < ev->vsize; i++) {
   //   bin = ev->binv[i];
   //   value->size += bin->orig_size;
@@ -310,13 +311,13 @@ char* io_vec2str(ErlIOVec *src, int skip, int length) {
   ErlDrvBinary * bin;
   
   if (skip > src->size) {
-    printf("returning null\n");
+    dprintf("returning null\n");
     return NULL;
   }
   // target = driver_alloc(sizeof(char) * length);
   // driver_free(target);
   target = driver_alloc(sizeof(char) * length);
-  printf("target %p\n", target);
+  dprintf("target %p\n", target);
   //skip whole binaries
   while(v < src->vsize) {
     bin = src->binv[v];
@@ -325,7 +326,7 @@ char* io_vec2str(ErlIOVec *src, int skip, int length) {
       continue;
     }
     if (bin->orig_size >= skip) {
-      printf("skip size is smaller than the bin\n");
+      dprintf("skip size is smaller than the bin\n");
       break;
     } else {
       v++;
@@ -336,16 +337,16 @@ char* io_vec2str(ErlIOVec *src, int skip, int length) {
   
   while(v < src->vsize && length > 0) {
     bin = src->binv[v];
-    printf("v is %d\n", v);
+    dprintf("v is %d\n", v);
     if (length > (bin->orig_size - skip)) {
-      printf("copying %d bytes.  length is %d\n", bin->orig_size - skip, length);
+      dprintf("copying %d bytes.  length is %d\n", bin->orig_size - skip, length);
       memcpy(&target[pos], &bin->orig_bytes[skip], bin->orig_size - skip);
       length -= bin->orig_size - skip;
       pos += bin->orig_size - skip;
     } else {
-      printf("copying %d bytes from %d.  length is %d. pos is %d\n", length, skip, length, pos);
+      dprintf("copying %d bytes from %d.  length is %d. pos is %d\n", length, skip, length, pos);
       memcpy(&target[pos], &bin->orig_bytes[skip], length);
-      printf("target = %c%c%c\n", target[0], target[1], target[2]);
+      dprintf("target = %c%c%c\n", target[0], target[1], target[2]);
       pos += length;
       break;
     }

@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <check.h>
+#include "common.h"
 
 START_TEST(create_and_insert) {
   lru_t *lru;
@@ -37,7 +38,7 @@ START_TEST(eject_one) {
   lru_insert(lru, "two", 3, "two", 3, NULL);
   lru_insert(lru, "three", 5, "three", 5, NULL);
   ejected = lru_eject_by_size(lru, 3, NULL, NULL);
-  printf("ejected %d\n", ejected);
+  dprintf("ejected %d\n", ejected);
   fail_unless(ejected > 0);
 }
 END_TEST
@@ -53,7 +54,7 @@ START_TEST(eject_multiple) {
   lru_insert(lru, "two", 3, "two", 3, NULL);
   three = lru_insert(lru, "three", 5, "three", 5, NULL);
   ejected = lru_eject_by_size(lru, 12, NULL, NULL);
-  printf("test ejected %d\n", ejected);
+  dprintf("test ejected %d\n", ejected);
   fail_unless((lru_item_t*)lru->list->head->data == three);
   fail_unless(ejected == 12);
   lru_destroy(lru);

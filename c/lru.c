@@ -1,6 +1,7 @@
 #include "lru.h"
 #include "double_link.h"
 #include <stdlib.h>
+#include "common.h"
 
 static void lru_destroy_item(lru_item_t *item);
 
@@ -32,7 +33,7 @@ int lru_eject_by_size(lru_t *lru, int size, EjectionCallback eject, void * conta
   d_node_t *node;
   d_node_t *next;
   
-  printf("ejecting %d bytes\n", size);
+  dprintf("ejecting %d bytes\n", size);
   
   while(ejected < size) {
     node = d_list_shift(lru->list);
