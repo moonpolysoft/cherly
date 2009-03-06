@@ -278,7 +278,6 @@ ErlIOVec* copy_io_vec(ErlIOVec *ev) {
       to->iov[i].iov_base = NULL;
     } else {
       to->binv[i] = bin;
-      driver_binary_inc_refc(bin);
       to->iov[i].iov_len = bin->orig_size;
       to->iov[i].iov_base = bin->orig_bytes;
     }
