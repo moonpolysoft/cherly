@@ -30,19 +30,23 @@ put_with_lru_eject_test() ->
   ?assertEqual(112, cherly:size(C)),
   ?assertEqual(7, cherly:items(C)),
   cherly:stop(C).
-  
 
-  
-  
-  
 succ([]) ->
   [];
-  
+
 succ(Str) ->
   succ_int(lists:reverse(Str), []).
-  
+
 succ_int([Char|Str], Acc) ->
   if
     Char >= $z -> succ_int(Str, [$a|Acc]);
-    true -> lists:reverse([Char+1|Acc] ++ Str)
+    true -> lists:reverse(lists:reverse([Char+1|Acc]) ++ Str)
   end.
+
+fast_acc(_, Acc, 0) -> Acc;
+
+fast_acc(Fun, Acc, N) ->
+  fast_acc(Fun, Fun(Acc), N-1).
+
+time_to_epoch_float({Mega,Sec,Micro}) ->
+  Mega * 1000000 + Sec + Micro / 1000000.

@@ -75,3 +75,4 @@ stop({cherly, P}) ->
 load_driver() ->
   Dir = filename:join([filename:dirname(code:which(cherly)), "..", "priv"]),
   erl_ddll:load(Dir, "cherly_drv").
+  
