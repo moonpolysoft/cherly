@@ -2,7 +2,6 @@
 #define __CHERLY__
 
 #include <Judy.h>
-#include <cprops/heap.h>
 #include "lru.h"
 
 #define cherly_size(cherly) ((cherly)->size)
