@@ -38,6 +38,7 @@ start(Size) ->
   end.
   
 put({cherly, P}, Key, Value) when is_list(Value) ->
+  % error_logger:info_msg("key ~p value ~p~n", [Key, Value]),
   Values = lists:flatten(Value),
   Len = length(Key),
   ValLen = length(Values),
@@ -48,7 +49,7 @@ put({cherly, P}, Key, Value) when is_list(Value) ->
 put({cherly, P}, Key, Value) ->
   Len = length(Key),
   Preamble = <<0:32>>,
-  % ?debugFmt("Value ~p", [Value]),
+  % error_logger:info_msg("key ~p value ~p", [Key, Value]),
   port_command(P, [?PUT, <<Len:32>>, Key, Preamble, Value]).
   
 get({cherly, P}, Key) ->
@@ -56,8 +57,8 @@ get({cherly, P}, Key) ->
   port_command(P, [?GET, <<Len:32>>, Key]),
   receive
     {P, {data, BinList}} -> 
-      % ?debugFmt("BinList ~p", [BinList]),
-      unpack(BinList);
+      % error_logger:info_msg("key ~p BinList ~p", [Key, BinList]),
+      unpack(BinList, length(Key)+5);
     {P, So} -> So
   end.
   
@@ -89,9 +90,10 @@ load_driver() ->
   erl_ddll:load(Dir, "cherly_drv").
   
 % thanks erlang for fucking with the binaries passed into outputv
-unpack(Bin) ->
+unpack(Bin, SkipSize) ->
   % ?debugFmt("bin ~p", [Bin]),
-  [First|BinList] = normalize_tarded_binlist(Bin),
+  [PreFirst|BinList] = normalize_tarded_binlist(Bin),
+  <<_:SkipSize/binary, First/binary>> = PreFirst, %we need to do the skip here because outputv modifies the iovec
   <<ValLen:32, RestFirst/binary>> = First,
   if
     ValLen > 0 -> 

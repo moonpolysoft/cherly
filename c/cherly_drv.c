@@ -114,7 +114,7 @@ static void get(cherly_drv_t *cherly_drv, ErlIOVec *ev) {
   dprintf("freed\n");
   if (NULL != value) {
     print_ev(value);
-    driver_outputv(cherly_drv->port, "", 0, value, length+5);
+    driver_outputv(cherly_drv->port, "", 0, value, 0);
   } else {
     dprintf("value was NULL\n");
     send_atom(cherly_drv->port, "not_found");
