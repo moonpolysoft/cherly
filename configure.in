@@ -20,17 +20,6 @@ JUDY_LIBS="-L${JUDY_PREFIX}/lib -lJudy"
 JUDY_CFLAGS="-I${JUDY_PREFIX}/include"
 AC_SUBST(JUDY_LIBS)
 AC_SUBST(JUDY_CFLAGS)
-		
-AC_ARG_WITH(cprops,
-		[ --with-cprops=<path> prefix of cprops installation. e.g. /usr/local or /usr],
-		[CPROPS_PREFIX=$with_cprops],
-		[CPROPS_PREFIX=/usr/local])
-
-AC_SUBST(CPROPS_PREFIX)
-CPROPS_LIBS="-L${CPROPS_PREFIX}/lib -lcprops"
-CPROPS_CFLAGS="-I${CPROPS_PREFIX}/include"
-AC_SUBST(CPROPS_LIBS)
-AC_SUBST(CPROPS_CFLAGS)
 
 ERLDIR=`awk -F= '/ROOTDIR=/ { print [$]2; exit; }' $ERL`
 AC_SUBST(ERL)

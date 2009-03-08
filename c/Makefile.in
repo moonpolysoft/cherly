@@ -9,7 +9,7 @@ bindir = $(exec_prefix)/bin
 infodir = $(prefix)/info
 libdir = $(prefix)/lib/gnudl
 mandir = $(prefix)/man/man1
-CFLAGS = $(CPPFLAGS) @CFLAGS@ @JUDY_CFLAGS@ @CPROPS_CFLAGS@
+CFLAGS = $(CPPFLAGS) @CFLAGS@ @JUDY_CFLAGS@
 
 ifeq ($(shell uname),Linux)
 	LDFLAGS = $(LDFLAGS_COMMON) -shared
@@ -42,10 +42,10 @@ debug:
 
 ../priv/%_drv.so: %_drv.o cherly.o double_link.o lru.o
 	mkdir -p ../priv
-	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) $(LDFLAGS) @JUDY_LIBS@ @CPROPS_LIBS@ -o $@ $^ @LIBEI@	
+	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) $(LDFLAGS) @JUDY_LIBS@ -o $@ $^ @LIBEI@	
 
 test_suite: suite.o $(TEST_OBJECTS) $(UNDER_TEST)
-	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) @JUDY_LIBS@ @CPROPS_LIBS@ -lcheck -o $@ $^ @LIBEI@	
+	$(CC) $(CFLAGS) $(DEFS) $(DEBUG) @JUDY_LIBS@ -lcheck -o $@ $^ @LIBEI@	
 
 test: test_suite
 	$(MAKE) TEST=-DTEST
