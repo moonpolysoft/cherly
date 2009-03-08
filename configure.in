@@ -3,7 +3,6 @@
 
 AC_PREREQ(2.60)
 AC_INIT(cherly, 0.0.1)
-AC_CONFIG_HEADER([c/config.h])
 
 # Checks for programs.
 AC_PROG_CC
