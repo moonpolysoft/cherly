@@ -38,14 +38,18 @@ start(Size) ->
   end.
   
 put({cherly, P}, Key, Value) ->
+  Values = lists:flatten([Value]),
   Len = length(Key),
-  port_command(P, [?PUT, <<Len:32>>, Key, Value]).
+  ValLen = length(Values),
+  SizeBin = << <<S:32>> || S <- [byte_size(Bin) || Bin <- Values] >>,
+  Preamble = <<ValLen:32, SizeBin/binary>>,
+  port_command(P, [?PUT, <<Len:32>>, Key, Preamble, Values]).
   
 get({cherly, P}, Key) ->
   Len = length(Key),
   port_command(P, [?GET, <<Len:32>>, Key]),
   receive
-    {P, {data, Bin}} -> Bin;
+    {P, {data, BinList}} -> unpack(BinList);
     So -> So
   end.
   
@@ -76,3 +80,35 @@ load_driver() ->
   Dir = filename:join([filename:dirname(code:which(cherly)), "..", "priv"]),
   erl_ddll:load(Dir, "cherly_drv").
   
+% thanks erlang for fucking with the binaries passed into outputv
+unpack(Bin) ->
+  [First|BinList] = normalize_tarded_binlist(Bin),
+  <<ValLen:32, RestFirst/binary>> = First,
+  SizeLen = ValLen * 4,
+  <<SizesBin:SizeLen/binary, LeftOver/binary>> = RestFirst,
+  Sizes = [ Size || <<Size:32>> <= SizesBin ],
+  {ok, unpack(Sizes, [LeftOver|BinList], [])}.
+  
+unpack([], _, [Acc]) -> Acc;
+  
+unpack([], _, Acc) -> lists:reverse(Acc);
+
+unpack(Sizes, [Bin|BinList], Acc) when byte_size(Bin) == 0 -> %discard your empties
+  unpack(Sizes, BinList, Acc);
+
+unpack([Size|Sizes], [Bin|BinList], Acc) ->
+  if
+    Size < byte_size(Bin) ->
+      <<Ext:Size/binary, Rest/binary>> = Bin,
+      unpack(Sizes, [Rest|BinList], [Ext|Acc]);
+    true ->
+      unpack(Sizes, BinList, [Bin|Acc])
+  end.
+  
+normalize_tarded_binlist(List) ->
+  normalize_tarded_binlist(List, []).
+  
+normalize_tarded_binlist(Bin, Acc) when not is_list(Bin) -> lists:reverse([Bin|Acc]);
+  
+normalize_tarded_binlist([Bin|Rest], Acc) ->
+  normalize_tarded_binlist(Rest, [Bin|Acc]).

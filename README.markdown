@@ -9,8 +9,11 @@ Dependencies
 =======
 
 * Runtime
-** Judy >= 1.0.4: http://judy.sourceforge.net/
-** Erlang >= R12B-3
+  
+        Judy >= 1.0.4: http://judy.sourceforge.net/
+        Erlang >= R12B-3
+
 * Build (test)
-** Check >= 0.9.5 http://check.sourceforge.net/
+  
+        Check >= 0.9.5 http://check.sourceforge.net/
 

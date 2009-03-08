@@ -1,11 +1,13 @@
 -include_lib("eunit/include/eunit.hrl").
 
+-export([succ/1, fast_acc/3, time_to_epoch_float/1]).
+
 simple_test() ->
   {ok, C} = cherly:start(120),
   Value = <<"value">>,
   cherly:put(C, "key", Value),
-  ?assertEqual(Value, cherly:get(C, "key")),
-  ?assertEqual(16, cherly:size(C)),
+  ?assertEqual({ok, Value}, cherly:get(C, "key")),
+  ?assertEqual(24, cherly:size(C)),
   cherly:stop(C).
   
 put_get_and_remove_test() ->
@@ -13,7 +15,7 @@ put_get_and_remove_test() ->
   Value = <<"value">>,
   ?assertEqual(not_found, cherly:get(C, "key")),
   cherly:put(C, "key", Value),
-  ?assertEqual(Value, cherly:get(C, "key")),
+  ?assertEqual({ok, Value}, cherly:get(C, "key")),
   cherly:remove(C, "key"),
   ?assertEqual(not_found, cherly:get(C, "key")),
   ?assertEqual(0, cherly:size(C)),
@@ -27,8 +29,29 @@ put_with_lru_eject_test() ->
       cherly:put(C, Mod, Value),
       Mod
     end, "aaa", lists:seq(1, 10)),
-  ?assertEqual(112, cherly:size(C)),
-  ?assertEqual(7, cherly:items(C)),
+  ?assertEqual(120, cherly:size(C)),
+  ?assertEqual(5, cherly:items(C)),
+  cherly:stop(C).
+  
+what_goes_in_must_come_out_test() ->
+  {ok, C} = cherly:start(120),
+  cherly:put(C, "key", [<<"val1">>, <<"val2">>]),
+  ?assertEqual({ok, [<<"val1">>, <<"val2">>]}, cherly:get(C, "key")),
+  cherly:stop(C).
+  
+big_stuff_that_goes_in_must_come_out_test() ->
+  {ok, C} = cherly:start(1048576),
+  V1 = <<0:524288>>,
+  V2 = <<1:524288>>,
+  cherly:put(C, "key", [V1, V2]),
+  Ret = cherly:get(C, "key"),
+  ?assertEqual({ok, [V1,V2]}, Ret),
+  cherly:stop(C).
+  
+remove_nonexistant_test() ->
+  {ok, C} = cherly:start(120),
+  cherly:remove(C, "key"),
+  ?assertEqual(not_found, cherly:get(C, "key")),
   cherly:stop(C).
 
 succ([]) ->
