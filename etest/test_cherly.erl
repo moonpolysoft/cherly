@@ -7,7 +7,7 @@ simple_test() ->
   Value = <<"value">>,
   cherly:put(C, "key", Value),
   ?assertEqual({ok, Value}, cherly:get(C, "key")),
-  ?assertEqual(24, cherly:size(C)),
+  ?assertEqual(20, cherly:size(C)),
   cherly:stop(C).
   
 put_get_and_remove_test() ->
@@ -30,7 +30,7 @@ put_with_lru_eject_test() ->
       Mod
     end, "aaa", lists:seq(1, 10)),
   ?assertEqual(120, cherly:size(C)),
-  ?assertEqual(5, cherly:items(C)),
+  ?assertEqual(6, cherly:items(C)),
   cherly:stop(C).
   
 what_goes_in_must_come_out_test() ->
@@ -46,6 +46,20 @@ big_stuff_that_goes_in_must_come_out_test() ->
   cherly:put(C, "key", [V1, V2]),
   Ret = cherly:get(C, "key"),
   ?assertEqual({ok, [V1,V2]}, Ret),
+  cherly:stop(C).
+  
+put_one_thing_in_no_list_big_test() ->
+  {ok, C} = cherly:start(1048576),
+  V = <<0:524288>>,
+  cherly:put(C, "key", V),
+  ?assertEqual({ok, V}, cherly:get(C, "key")),
+  cherly:stop(C).
+  
+put_one_thing_in_no_list_small_test() ->
+  {ok, C} = cherly:start(1048576),
+  V = <<1:8>>,
+  cherly:put(C, "key", V),
+  ?assertEqual({ok, V}, cherly:get(C, "key")),
   cherly:stop(C).
   
 remove_nonexistant_test() ->

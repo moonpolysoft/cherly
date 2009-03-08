@@ -203,6 +203,7 @@ static void outputv(ErlDrvData handle, ErlIOVec *ev) {
 }
 
 static void print_ev(ErlIOVec *ev) {
+  #ifdef DEBUG
   int i=0;
   char *tmp;
   ErlDrvBinary *bin;
@@ -212,7 +213,6 @@ static void print_ev(ErlIOVec *ev) {
   }
   dprintf("[");
   for(i=0; i<ev->vsize; i++) {
-    dprintf("binv %p", ev->binv);
     bin = ev->binv[i];
     if (NULL == bin) {
       dprintf("NULL ");
@@ -228,6 +228,7 @@ static void print_ev(ErlIOVec *ev) {
     }
   }
   dprintf("]\n");
+  #endif
 }
 
 static void send_long(ErlDrvPort port, long num) {

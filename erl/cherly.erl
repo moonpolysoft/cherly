@@ -37,19 +37,27 @@ start(Size) ->
       {error, Msg}
   end.
   
-put({cherly, P}, Key, Value) ->
-  Values = lists:flatten([Value]),
+put({cherly, P}, Key, Value) when is_list(Value) ->
+  Values = lists:flatten(Value),
   Len = length(Key),
   ValLen = length(Values),
   SizeBin = << <<S:32>> || S <- [byte_size(Bin) || Bin <- Values] >>,
   Preamble = <<ValLen:32, SizeBin/binary>>,
-  port_command(P, [?PUT, <<Len:32>>, Key, Preamble, Values]).
+  port_command(P, [?PUT, <<Len:32>>, Key, Preamble, Values]);
+  
+put({cherly, P}, Key, Value) ->
+  Len = length(Key),
+  Preamble = <<0:32>>,
+  % ?debugFmt("Value ~p", [Value]),
+  port_command(P, [?PUT, <<Len:32>>, Key, Preamble, Value]).
   
 get({cherly, P}, Key) ->
   Len = length(Key),
   port_command(P, [?GET, <<Len:32>>, Key]),
   receive
-    {P, {data, BinList}} -> unpack(BinList);
+    {P, {data, BinList}} -> 
+      % ?debugFmt("BinList ~p", [BinList]),
+      unpack(BinList);
     So -> So
   end.
   
@@ -82,14 +90,23 @@ load_driver() ->
   
 % thanks erlang for fucking with the binaries passed into outputv
 unpack(Bin) ->
+  % ?debugFmt("bin ~p", [Bin]),
   [First|BinList] = normalize_tarded_binlist(Bin),
   <<ValLen:32, RestFirst/binary>> = First,
-  SizeLen = ValLen * 4,
-  <<SizesBin:SizeLen/binary, LeftOver/binary>> = RestFirst,
-  Sizes = [ Size || <<Size:32>> <= SizesBin ],
-  {ok, unpack(Sizes, [LeftOver|BinList], [])}.
+  if
+    ValLen > 0 -> 
+      SizeLen = ValLen * 4,
+      <<SizesBin:SizeLen/binary, LeftOver/binary>> = RestFirst,
+      Sizes = [ Size || <<Size:32>> <= SizesBin ],
+      {ok, unpack(Sizes, [LeftOver|BinList], [])};
+    byte_size(RestFirst) == 0 ->
+      [B] = BinList,
+      {ok, B};
+    true ->
+      {ok, RestFirst}
+  end.
   
-unpack([], _, [Acc]) -> Acc;
+% unpack([], _, [Acc]) -> Acc;
   
 unpack([], _, Acc) -> lists:reverse(Acc);
 
