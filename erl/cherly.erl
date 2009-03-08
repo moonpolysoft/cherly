@@ -58,7 +58,7 @@ get({cherly, P}, Key) ->
     {P, {data, BinList}} -> 
       % ?debugFmt("BinList ~p", [BinList]),
       unpack(BinList);
-    So -> So
+    {P, So} -> So
   end.
   
 remove({cherly, P}, Key) ->

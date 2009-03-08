@@ -241,8 +241,8 @@ static void send_long(ErlDrvPort port, long num) {
 }
 
 static void send_atom(ErlDrvPort port, char *atom) {
-  ErlDrvTermData spec[] = {ERL_DRV_ATOM, driver_mk_atom(atom)};
-  driver_output_term(port, spec, 2);
+  ErlDrvTermData spec[] = {ERL_DRV_PORT, driver_mk_port(port), ERL_DRV_ATOM, driver_mk_atom(atom), ERL_DRV_TUPLE, 2};
+  driver_output_term(port, spec, 6);
 }
 
 static void destroy(char * key, int keylen, void * value, int vallen) {
