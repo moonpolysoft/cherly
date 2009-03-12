@@ -646,9 +646,6 @@ ERLC
 JUDY_PREFIX
 JUDY_LIBS
 JUDY_CFLAGS
-CPROPS_PREFIX
-CPROPS_LIBS
-CPROPS_CFLAGS
 ERLBINDIR
 ERLDIR
 ERTSBASE
@@ -1238,7 +1235,6 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
  --with-judy=<path> prefix of Judy installation. e.g. /usr/local or /usr
- --with-cprops=<path> prefix of cprops installation. e.g. /usr/local or /usr
 
 Some influential environment variables:
   CC          C compiler command
@@ -1679,7 +1675,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-# AC_CONFIG_HEADER([c/config.h])
 
 # Checks for programs.
 ac_ext=c
@@ -2775,21 +2770,6 @@ fi
 
 JUDY_LIBS="-L${JUDY_PREFIX}/lib -lJudy"
 JUDY_CFLAGS="-I${JUDY_PREFIX}/include"
-
-
-
-
-# Check whether --with-cprops was given.
-if test "${with_cprops+set}" = set; then
-  withval=$with_cprops; CPROPS_PREFIX=$with_cprops
-else
-  CPROPS_PREFIX=/usr/local
-fi
-
-
-
-CPROPS_LIBS="-L${CPROPS_PREFIX}/lib -lcprops"
-CPROPS_CFLAGS="-I${CPROPS_PREFIX}/include"
 
 
 
@@ -4087,7 +4067,7 @@ _ACEOF
 fi
 
 
-ac_config_files="$ac_config_files c/Makefile erl/Makefile"
+ac_config_files="$ac_config_files c/Makefile erl/Makefile Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4645,6 +4625,7 @@ do
   case $ac_config_target in
     "c/Makefile") CONFIG_FILES="$CONFIG_FILES c/Makefile" ;;
     "erl/Makefile") CONFIG_FILES="$CONFIG_FILES erl/Makefile" ;;
+    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -4754,9 +4735,6 @@ ERLC!$ERLC$ac_delim
 JUDY_PREFIX!$JUDY_PREFIX$ac_delim
 JUDY_LIBS!$JUDY_LIBS$ac_delim
 JUDY_CFLAGS!$JUDY_CFLAGS$ac_delim
-CPROPS_PREFIX!$CPROPS_PREFIX$ac_delim
-CPROPS_LIBS!$CPROPS_LIBS$ac_delim
-CPROPS_CFLAGS!$CPROPS_CFLAGS$ac_delim
 ERLBINDIR!$ERLBINDIR$ac_delim
 ERLDIR!$ERLDIR$ac_delim
 ERTSBASE!$ERTSBASE$ac_delim
@@ -4768,7 +4746,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

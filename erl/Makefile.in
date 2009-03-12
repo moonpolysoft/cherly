@@ -49,3 +49,7 @@ clean:
 install:
 	install -d $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)
 	cp -r `pwd`/../ebin $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)
+	
+package:
+	install -d `pwd`/../.pkgtmp/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/ebin
+	cp -r `pwd`/../ebin/* `pwd`/../.pkgtmp/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/ebin

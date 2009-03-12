@@ -44,4 +44,4 @@ AC_HEADER_STDBOOL
 # Checks for library functions.
 AC_HEADER_STDC
 
-AC_OUTPUT([c/Makefile erl/Makefile])
+AC_OUTPUT([c/Makefile erl/Makefile Makefile])

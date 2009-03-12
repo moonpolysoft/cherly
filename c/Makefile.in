@@ -12,8 +12,10 @@ mandir = $(prefix)/man/man1
 CFLAGS = $(CPPFLAGS) @CFLAGS@ @JUDY_CFLAGS@
 
 ifeq ($(shell uname),Linux)
+	ARCH = linux
 	LDFLAGS = $(LDFLAGS_COMMON) -shared
 else
+	ARCH = macosx
 	LDFLAGS = $(LDFLAGS_COMMON) -dynamic -bundle -undefined suppress -flat_namespace
 endif
 
@@ -67,3 +69,7 @@ clean:
 install:
 	install -d $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/priv
 	cp -r `pwd`/../priv $(ERLDIR)/lib/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/
+
+package:
+	install -d `pwd`/../.pkgtmp/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/priv
+	cp -r `pwd`/../priv/* `pwd`/../.pkgtmp/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/priv
