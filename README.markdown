@@ -17,3 +17,14 @@ Dependencies
   
         Check >= 0.9.5 http://check.sourceforge.net/
 
+
+Installation
+========
+
+* From source:
+
+        ./configure && make
+        sudo make install
+        
+
+        
