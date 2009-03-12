@@ -1,0 +1,41 @@
+PACKAGE_NAME = @PACKAGE_NAME@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+RELDIR = releases/$(PACKAGE_NAME)-$(PACKAGE_VERSION)
+
+ifeq ($(shell uname),Linux)
+	ARCH = linux
+else
+	ARCH = macosx
+endif
+
+all:
+	(cd c;$(MAKE))
+	(cd erl;$(MAKE))
+
+clean:
+	(cd c;$(MAKE) clean)
+	(cd erl;$(MAKE) clean)
+
+test:
+	(cd c; $(MAKE) test)
+	(cd erl; $(MAKE) test)
+
+install: all
+	(cd c; $(MAKE) install)
+	(cd erl; $(MAKE) install)
+
+debug:
+	(cd c;$(MAKE) debug)
+	(cd erl;$(MAKE) debug)
+
+release: all
+	mkdir -p $(RELDIR)
+	cp -r ebin $(RELDIR)/
+	cp -r priv $(RELDIR)/
+	mkdir -p $(RELDIR)/src
+	cp -r erl/*.erl $(RELDIR)/src/
+	cp -r c/*.c $(RELDIR)/src
+	cp -r c/*.h $(RELDIR)/src
+	sed s/?VERSION/$(PACKAGE_VERSION)/ releases/cherly.rel > $(RELDIR)/cherly.rel
+	sed s/?VERSION/$(PACKAGE_VERSION)/ ebin/cherly.app > $(RELDIR)/ebin/cherly.app
+	cd $(RELDIR); erl -pa ./ebin -eval "systools:make_script(\"cherly\", [local])." -eval "systools:make_tar(\"cherly\")." -s erlang halt
