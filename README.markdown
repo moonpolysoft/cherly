@@ -23,15 +23,15 @@ Frequently Used Questions
 
 * Why not use ETS to do this?
 
-  > ETS is a fine hashtable, and plenty fast.  However building an LRU around it proved surprisingly difficult.  After playing around a bunch, the best way to go about it was to put the entire thing in a port driver.
+    > ETS is a fine hashtable, and plenty fast.  However building an LRU around it proved surprisingly difficult.  After playing around a bunch, the best way to go about it was to put the entire thing in a port driver.
   
 * How does the LRU work?
 
-  > Right now it's a doubly linked list.  Lookups cause a node in the list to get unlinked and sent to the head of the list.  Ejecting items off of the LRU's tail happens when new keys come in and the cache is out of space.  All these operations are O(1) which is rad.
+    > Right now it's a doubly linked list.  Lookups cause a node in the list to get unlinked and sent to the head of the list.  Ejecting items off of the LRU's tail happens when new keys come in and the cache is out of space.  All these operations are O(1) which is rad.
   
 * Why does cherly just deal with binaries?
 
-  > Cherly is very specific in its designed use case: storing possibly large binary values in memory with as little overhead as possible.  Since I'm expecting that some binaries could be up to 1MB in size and possibly more, causing the ERTS to copy the actual bytes in and out of the port driver is unacceptable.  Therefore cherly uses the outputv callback and the driver_outputv function in order to transfer binaries by reference instead of by value.  This means that cherly does not need a slab allocator or anything silly like that.  The binaries are already allocated.  Cherly simply needs to increment the reference count and hang on to it for as long as needed.
+    > Cherly is very specific in its designed use case: storing possibly large binary values in memory with as little overhead as possible.  Since I'm expecting that some binaries could be up to 1MB in size and possibly more, causing the ERTS to copy the actual bytes in and out of the port driver is unacceptable.  Therefore cherly uses the outputv callback and the driver_outputv function in order to transfer binaries by reference instead of by value.  This means that cherly does not need a slab allocator or anything silly like that.  The binaries are already allocated.  Cherly simply needs to increment the reference count and hang on to it for as long as needed.
 
 Dependencies
 =======
